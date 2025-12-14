@@ -10,6 +10,7 @@ app_license = "mit"
 
 fixtures = [
     {"dt": "Custom Field", "filters": [["module", "=", "Samtech Protu"]]},
+    {"dt": "Client Script", "filters": [["module", "=", "Samtech Protu"]]},
 ]
 
 # required_apps = []
