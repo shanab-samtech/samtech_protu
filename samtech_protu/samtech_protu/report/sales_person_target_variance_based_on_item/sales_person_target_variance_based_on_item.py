@@ -44,8 +44,7 @@ def get_data_column(filters, partner_doctype):
 		return columns, data
 
 	for key, value in rows.items():
-		value.update({frappe.scrub(partner_doctype): key[0], "item_group": key[1]})
-
+		value.update({frappe.scrub(partner_doctype): key[0], "item_code": key[1]})
 		data.append(value)
 
 	return columns, data
@@ -58,15 +57,15 @@ def get_data(filters, period_list, partner_doctype):
 	if not sales_users_data:
 		return
 	sales_users = []
-	sales_user_wise_item_groups = {}
+	sales_user_wise_items = {}
 
 	for d in sales_users_data:
 		if d.parent not in sales_users:
 			sales_users.append(d.parent)
 
-		sales_user_wise_item_groups.setdefault(d.parent, [])
-		if d.item_group:
-			sales_user_wise_item_groups[d.parent].append(d.item_group)
+		sales_user_wise_items.setdefault(d.parent, [])
+		if d.item:
+			sales_user_wise_items[d.parent].append(d.item)
 
 	date_field = "transaction_date" if filters.get("doctype") == "Sales Order" else "posting_date"
 
@@ -75,7 +74,7 @@ def get_data(filters, period_list, partner_doctype):
 	return prepare_data(
 		filters,
 		sales_users_data,
-		sales_user_wise_item_groups,
+		sales_user_wise_items,
 		actual_data,
 		date_field,
 		period_list,
@@ -98,10 +97,10 @@ def get_columns(filters, period_list, partner_doctype):
 			"width": 150,
 		},
 		{
-			"fieldname": "item_group",
-			"label": _("Item Group"),
+			"fieldname": "item_code",
+			"label": _("Item"),
 			"fieldtype": "Link",
-			"options": "Item Group",
+			"options": "Item",
 			"width": 150,
 		},
 	]
@@ -168,7 +167,7 @@ def get_columns(filters, period_list, partner_doctype):
 def prepare_data(
 	filters,
 	sales_users_data,
-	sales_user_wise_item_groups,
+	sales_user_wise_items,
 	actual_data,
 	date_field,
 	period_list,
@@ -179,10 +178,8 @@ def prepare_data(
 	target_qty_amt_field = "target_qty" if filters.get("target_on") == "Quantity" else "target_amount"
 	qty_or_amount_field = "stock_qty" if filters.get("target_on") == "Quantity" else "base_net_amount"
 
-	item_group_parent_child_map = get_item_group_parent_child_map()
-
 	for d in sales_users_data:
-		key = (d.parent, d.item_group)
+		key = (d.parent, d.item)
 		dist_data = get_periodwise_distribution_data(d.distribution_id, period_list, filters.get("period"))
 
 		if key not in rows:
@@ -206,9 +203,8 @@ def prepare_data(
 					and period.from_date <= r.get(date_field)
 					and r.get(date_field) <= period.to_date
 					and (
-						not sales_user_wise_item_groups.get(d.parent)
-						or r.item_group == d.item_group
-						or r.item_group in item_group_parent_child_map.get(d.item_group, [])
+						not sales_user_wise_items.get(d.parent)
+						or r.item_code == d.item
 					)
 				):
 					details[p_key] += r.get(qty_or_amount_field, 0)
@@ -220,25 +216,6 @@ def prepare_data(
 			details["total_variance"] = details.get("total_achieved") - details.get("total_target")
 
 	return rows
-
-
-def get_item_group_parent_child_map():
-	"""
-	Returns a dict of all item group parents and leaf children associated with them.
-	"""
-
-	item_groups = frappe.get_all(
-		"Item Group", fields=["name", "parent_item_group"], order_by="lft desc, rgt desc"
-	)
-	item_group_parent_child_map = {}
-
-	for item_group in item_groups:
-		children = item_group_parent_child_map.get(item_group.name, [])
-		if not children:
-			children = [item_group.name]
-		item_group_parent_child_map.setdefault(item_group.parent_item_group, []).extend(children)
-
-	return item_group_parent_child_map
 
 
 def get_actual_data(filters, sales_users_or_territory_data, date_field, sales_field):
@@ -262,7 +239,7 @@ def get_actual_data(filters, sales_users_or_territory_data, date_field, sales_fi
 		sales_field_col = parent_doc[sales_field]
 
 	query = query.select(
-		child_doc.item_group,
+		child_doc.item_code,
 		parent_doc[date_field],
 		(stock_qty).as_("stock_qty"),
 		(net_amount).as_("base_net_amount"),
@@ -283,15 +260,13 @@ def get_parents_data(filters, partner_doctype):
 
 	if filters.get("fiscal_year"):
 		filters_dict["fiscal_year"] = filters.get("fiscal_year")
-
+	
 	# Add sales person filter if provided
 	if filters.get("sales_person"):
 		filters_dict["parent"] = filters.get("sales_person")
 
 	return frappe.get_all(
-		"Target Detail",
+		"Target Detail Item",
 		filters=filters_dict,
-		fields=["parent", "item_group", target_qty_amt_field, "fiscal_year", "distribution_id"],
+		fields=["parent", "item", target_qty_amt_field, "fiscal_year", "distribution_id"],
 	)
-
-
