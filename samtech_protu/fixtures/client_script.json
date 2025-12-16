@@ -9,5 +9,16 @@
   "name": "Calculate Target Amount of Sales Person",
   "script": "frappe.ui.form.on('Target Detail Item', {\n\t    target_qty: function(frm, cdt, cdn) {\n        let row = locals[cdt][cdn];\n\n        if (!row.item || !row.target_qty) {\n            row.target_amount = 0;\n            frm.refresh_field('custom_targets_items');\n            return;\n        }\n\n        // Get item price from Item Price\n        frappe.db.get_value(\n            'Item Price',\n            {\n                item_code: row.item,\n                selling: 1   // or remove if you want any price\n            },\n            'price_list_rate'\n        ).then(r => {\n            if (r.message) {\n                let price = r.message.price_list_rate || 0;\n                row.target_amount = row.target_qty * price;\n                frm.refresh_field('custom_targets_items');\n            }\n        });\n    },\n\n    item: function(frm, cdt, cdn) {\n        let row = locals[cdt][cdn];\n\n        if (!row.item || !row.target_qty) {\n            row.target_amount = 0;\n            frm.refresh_field('custom_targets_items');\n            return;\n        }\n\n        // Get item price from Item Price\n        frappe.db.get_value(\n            'Item Price',\n            {\n                item_code: row.item,\n                selling: 1   // or remove if you want any price\n            },\n            'price_list_rate'\n        ).then(r => {\n            if (r.message) {\n                let price = r.message.price_list_rate || 0;\n                row.target_amount = row.target_qty * price;\n                frm.refresh_field('custom_targets_items');\n            }\n        });\n    }\n});\n\n\n\n\n\n\n\n\n",
   "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Item",
+  "enabled": 1,
+  "modified": "2025-12-16 19:04:10.146330",
+  "module": "Samtech Protu",
+  "name": "Calculate Target Amount of Sales Person in Item",
+  "script": "frappe.ui.form.on('Sales Person Item', {\n\ttarget_qty: function(frm, cdt, cdn) {\n        let row = locals[cdt][cdn];\n\n        if (!row.target_qty) {\n            row.target_amount = 0;\n            frm.refresh_field('custom_sales_person_details');\n            return;\n        }\n\n        // Get item price from Item Price\n        frappe.db.get_value(\n            'Item Price',\n            {\n                item_code: frm.doc.name,\n                selling: 1   // or remove if you want any price\n            },\n            'price_list_rate'\n        ).then(r => {\n            if (r.message) {\n                let price = r.message.price_list_rate || 0;\n                row.target_amount = row.target_qty * price;\n                frm.refresh_field('custom_sales_person_details');\n            }\n        });\n    },\n});\n\n\n\n\n\n\n\n\n",
+  "view": "Form"
  }
 ]

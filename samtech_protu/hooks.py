@@ -13,6 +13,16 @@ fixtures = [
     {"dt": "Client Script", "filters": [["module", "=", "Samtech Protu"]]},
 ]
 
+doc_events = {
+    "Item": {
+        "validate": "samtech_protu.sync_sales_person_item.sync_from_item_to_sales_person",
+    },
+    "Sales Person": {
+        "validate": "samtech_protu.sync_sales_person_item.sync_from_sales_person_to_item",
+    }
+}
+
+
 # required_apps = []
 
 # Each item in the list will be shown as an app in the apps page
