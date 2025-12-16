@@ -284,6 +284,10 @@ def get_parents_data(filters, partner_doctype):
 	if filters.get("fiscal_year"):
 		filters_dict["fiscal_year"] = filters.get("fiscal_year")
 
+	# Add sales person filter if provided
+	if filters.get("sales_person"):
+		filters_dict["parent"] = filters.get("sales_person")
+
 	return frappe.get_all(
 		"Target Detail",
 		filters=filters_dict,
