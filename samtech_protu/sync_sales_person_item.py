@@ -4,6 +4,43 @@
 import frappe
 from frappe import _
 
+
+def sync_user_permissions(doc, method=None):
+    if not doc.custom_user:
+        return
+    existing_perms = frappe.get_all(
+        "User Permission",
+        filters={
+            "user": doc.custom_user,
+            "allow": "Territory"
+        },
+        pluck="for_value"
+    )
+    existing_perms = set(existing_perms)
+
+    for row in doc.custom_terrorities:
+        print()
+        print()
+        print("existing_perms : ", existing_perms)
+        print("row.territory : ", row.territory)
+        print()
+        print()
+        if row.territory not in existing_perms:
+            print()
+            existing_perms.add(row.territory)
+            print("row.territory existed : ", row.territory)
+            print()
+            frappe.get_doc({
+                "doctype": "User Permission",
+                "user": doc.custom_user,
+                "allow": "Territory",
+                "for_value": row.territory,
+                "apply_to_all_doctypes": 1
+            }).insert(ignore_permissions=True)
+
+    return
+
+
 # ============================================
 # SYNC FROM ITEM TO SALES PERSON
 # ============================================

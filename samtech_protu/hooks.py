@@ -19,6 +19,7 @@ doc_events = {
     },
     "Sales Person": {
         "validate": "samtech_protu.sync_sales_person_item.sync_from_sales_person_to_item",
+        "on_update": "samtech_protu.sync_sales_person_item.sync_user_permissions",
     }
 }
 
